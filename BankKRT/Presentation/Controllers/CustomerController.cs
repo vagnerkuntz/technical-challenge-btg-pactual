@@ -66,5 +66,19 @@ namespace BankKRT.Presentation.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPut("update-pix-limit")]
+        public async Task<IActionResult> UpdatePixLimit(int numberAccount, decimal newLimit)
+        {
+            try
+            {
+                await customerService.UpdatePixLimitAsync(numberAccount, newLimit);
+                return Ok("Limite PIX atualizado com sucesso.");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

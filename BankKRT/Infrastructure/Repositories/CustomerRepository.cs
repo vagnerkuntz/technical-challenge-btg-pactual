@@ -1,4 +1,5 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.DocumentModel;
 using BankKRT.Domain.Entities;
 using BankKRT.Domain.Repositories;
 using BankKRT.Infrastructure.Persistence.Models;
@@ -41,11 +42,14 @@ namespace BankKRT.Infrastructure.Repositories
             };
         }
 
-        public async Task<Customer?> GetCustomerByNumberAccount(int accountNumber)
+        public async Task<Customer?> GetCustomerByNumberAccount(int numberAccount)
         {
-            var search = context.QueryAsync<CustomerDynamoDBModel>(
-                accountNumber, new DynamoDBOperationConfig { IndexName = "NumberAccountIndex" });
-
+            var queryConfig = new DynamoDBOperationConfig
+            {
+                IndexName = "NumberAccountIndex"
+            };
+                
+            var search = context.QueryAsync<CustomerDynamoDBModel>(numberAccount, queryConfig);
             var results = await search.GetRemainingAsync();
 
             var firstResult = results.FirstOrDefault();
@@ -60,5 +64,28 @@ namespace BankKRT.Infrastructure.Repositories
                 LimitPix = firstResult.LimitPix
             };
         }
+
+        public async Task UpdateLimitPix(int numberAccount, decimal newLimit)
+        {
+            var queryConfig = new DynamoDBOperationConfig
+            {
+                IndexName = "NumberAccountIndex"
+            };
+
+            var customerAccount = context.QueryAsync<CustomerDynamoDBModel>(numberAccount, queryConfig);
+            var results = await customerAccount.GetRemainingAsync();
+
+            if (results == null || results.Count == 0)
+            {
+                throw new InvalidOperationException($"Cliente com o número da conta {numberAccount} não encontrado.");
+            }
+
+            foreach (var customer in results)
+            {
+                customer.LimitPix = newLimit;
+                await context.SaveAsync(customer);
+            }
+        }
+
     }
 }

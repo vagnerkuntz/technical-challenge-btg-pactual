@@ -42,5 +42,14 @@ namespace BankKRT.Application.Services
             return await customerRepository.GetCustomerByNumberAccount(numberAccount);
         }
 
+        public async Task UpdatePixLimitAsync(int numberAccount, decimal newLimit)
+        {
+            if (numberAccount <= 0)
+            {
+                throw new ArgumentException("O número da conta deve ser um valor positivo maior que zero.");
+            }
+
+            await customerRepository.UpdateLimitPix(numberAccount, newLimit);
+        }
     }
 }

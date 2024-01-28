@@ -6,6 +6,7 @@ namespace BankKRT.Domain.Repositories
     {
         Task CreateCustomer(Customer customer);
         Task<Customer?> GetCustomerByDocument(string document);
-        Task<Customer?> GetCustomerByNumberAccount(int accountNumber);
+        Task<Customer?> GetCustomerByNumberAccount(int numberAccount);
+        Task UpdateLimitPix(int numberAccount, decimal newLimit);
     }
 }
