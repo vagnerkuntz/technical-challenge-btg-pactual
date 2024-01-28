@@ -8,7 +8,7 @@ namespace BankKRT.Application.Services
     {
         private string FormatCPF(string cpf)
         {
-            return cpf?.Replace(" ", "").Replace("-", "").Replace(".", "");
+            return cpf.Replace(" ", "").Replace("-", "").Replace(".", "");
         }
 
         public async Task CreateCustomer(Customer customer)
@@ -25,5 +25,22 @@ namespace BankKRT.Application.Services
             customer.Document = FormatCPF(customer.Document);
             await customerRepository.CreateCustomer(customer);
         }
+
+        public async Task<Customer?> GetCustomerByDocument(string document)
+        {
+            document = FormatCPF(document);
+            return await customerRepository.GetCustomerByDocument(document);
+        }
+
+        public async Task<Customer?> GetCustomerByNumberAccountAsync(int numberAccount)
+        {
+            if (numberAccount <= 0)
+            {
+                throw new ArgumentException("O número da conta deve ser um valor positivo maior que zero.");
+            }
+
+            return await customerRepository.GetCustomerByNumberAccount(numberAccount);
+        }
+
     }
 }

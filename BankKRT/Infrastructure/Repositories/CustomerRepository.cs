@@ -25,5 +25,40 @@ namespace BankKRT.Infrastructure.Repositories
 
             await context.SaveAsync(customerDynamoDbModel);
         }
+
+        public async Task<Customer?> GetCustomerByDocument(string document)
+        {
+            var customerDynamoDbModel = await context.LoadAsync<CustomerDynamoDBModel>(document);
+            if (customerDynamoDbModel == null)
+            {
+                return null;
+            }
+
+            return new Customer
+            {
+                Document = customerDynamoDbModel.Document,
+                LimitPix = customerDynamoDbModel.LimitPix
+            };
+        }
+
+        public async Task<Customer?> GetCustomerByNumberAccount(int accountNumber)
+        {
+            var search = context.QueryAsync<CustomerDynamoDBModel>(
+                accountNumber, new DynamoDBOperationConfig { IndexName = "NumberAccountIndex" });
+
+            var results = await search.GetRemainingAsync();
+
+            var firstResult = results.FirstOrDefault();
+            if (firstResult == null)
+            {
+                return null;
+            }
+
+            return new Customer
+            {
+                NumberAccount = firstResult.NumberAccount,
+                LimitPix = firstResult.LimitPix
+            };
+        }
     }
 }

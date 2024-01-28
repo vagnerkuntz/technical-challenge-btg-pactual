@@ -50,7 +50,7 @@ public class CustomValidationErrorMiddleware(RequestDelegate next)
                     return;
                 }
             }
-            catch (JsonException jsonEx)
+            catch (JsonException)
             {
                 // Log ou tratamento de exceção de deserialização
             }

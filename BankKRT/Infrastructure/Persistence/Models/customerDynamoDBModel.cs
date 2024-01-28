@@ -12,7 +12,7 @@ namespace BankKRT.Infrastructure.Persistence.Models
         [DynamoDBProperty]
         public int NumberAgency { get; set; }
 
-        [DynamoDBProperty]
+        [DynamoDBGlobalSecondaryIndexHashKey("NumberAccountIndex")]
         public int NumberAccount { get; set; }
 
         [DynamoDBProperty]
