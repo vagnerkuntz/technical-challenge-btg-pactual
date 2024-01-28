@@ -49,6 +49,11 @@ namespace BankKRT.Application.Services
                 throw new ArgumentException("O número da conta deve ser um valor positivo maior que zero.");
             }
 
+            if (newLimit < 0)
+            {
+                throw new ArgumentException("O novo limite não pode ser menor que zero.");
+            }
+
             await customerRepository.UpdateLimitPix(numberAccount, newLimit);
         }
     }
