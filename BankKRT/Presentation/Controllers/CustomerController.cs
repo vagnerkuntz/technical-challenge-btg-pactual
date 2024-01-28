@@ -80,5 +80,18 @@ namespace BankKRT.Presentation.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpDelete("DeleteCustomer/{document}")]
+        public async Task<IActionResult> DeleteCustomerByDocument(string document)
+        {
+            try
+            {
+                await customerService.DeleteCustomerByDocument(document);
+                return Ok("Cliente apagado com sucesso.");
+            } catch (System.Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

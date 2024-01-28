@@ -1,5 +1,4 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
-using Amazon.DynamoDBv2.DocumentModel;
 using BankKRT.Domain.Entities;
 using BankKRT.Domain.Repositories;
 using BankKRT.Infrastructure.Persistence.Models;
@@ -85,6 +84,15 @@ namespace BankKRT.Infrastructure.Repositories
                 customer.LimitPix = newLimit;
                 await context.SaveAsync(customer);
             }
+        }
+
+        public async Task DeleteCustomerByDocument(string document)
+        {
+            var customerDynamoDbModel = await context.LoadAsync<CustomerDynamoDBModel>(document);
+            if (customerDynamoDbModel != null)
+                await context.DeleteAsync(customerDynamoDbModel);
+            else
+                throw new InvalidOperationException($"Cliente com o CPF {document} não encontrado.");
         }
 
     }

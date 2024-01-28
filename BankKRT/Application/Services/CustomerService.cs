@@ -1,6 +1,7 @@
 ﻿using BankKRT.Domain.Entities;
 using BankKRT.Domain.Repositories;
 using BankKRT.Domain.Validation;
+using BankKRT.Infrastructure.Persistence.Models;
 
 namespace BankKRT.Application.Services
 {
@@ -28,6 +29,11 @@ namespace BankKRT.Application.Services
 
         public async Task<Customer?> GetCustomerByDocument(string document)
         {
+            if (!CpfValidator.Validate(document))
+            {
+                throw new ArgumentException("CPF inválido. Por favor, verifique o número do CPF e tente novamente.");
+            }
+
             document = FormatCPF(document);
             return await customerRepository.GetCustomerByDocument(document);
         }
@@ -55,6 +61,21 @@ namespace BankKRT.Application.Services
             }
 
             await customerRepository.UpdateLimitPix(numberAccount, newLimit);
+        }
+
+        public async Task DeleteCustomerByDocument(string document)
+        {
+            if (!CpfValidator.Validate(document))
+            {
+                throw new ArgumentException("CPF inválido. Por favor, verifique o número do CPF e tente novamente.");
+            }
+
+            document = FormatCPF(document);
+            var customer = await GetCustomerByDocument(document);
+            if (customer != null)
+                await customerRepository.DeleteCustomerByDocument(document);
+            else
+                throw new InvalidOperationException($"Cliente com o CPF {document} não encontrado.");
         }
     }
 }
