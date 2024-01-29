@@ -128,11 +128,8 @@ namespace BankKRT.Application.Services
             {
                 document = FormatCPF(document);
                 var customer = await GetCustomerByDocument(document);
-                if (!customer.Any()) {
-                    await customerRepository.DeleteCustomerByDocument(document);
-                }
-                
-                throw new InvalidOperationException($"Cliente com o CPF {document} não encontrado.");
+                _ = customer.FirstOrDefault() ?? throw new InvalidOperationException($"Cliente com o CPF {document} não encontrado.");
+                await customerRepository.DeleteCustomerByDocument(document);
             }
             catch (Exception e)
             {
