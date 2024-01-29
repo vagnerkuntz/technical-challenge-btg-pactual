@@ -5,9 +5,9 @@ namespace BankKRT.Domain.Repositories
     public interface ICustomerRepository
     {
         Task CreateCustomer(Customer customer);
-        Task<Customer?> GetCustomerByDocument(string document);
-        Task<Customer?> GetCustomerByNumberAccount(int numberAccount);
-        Task UpdateLimitPix(int numberAccount, decimal newLimit);
+        Task<IEnumerable<Customer?>> GetCustomerByDocument(string document);
+        Task<IEnumerable<Customer>> GetCustomersByNumberAccount(int numberAccount);
+        Task UpdateLimitPix(string document, int numberAccount, decimal newLimit);
         Task DeleteCustomerByDocument(string document);
     }
 }

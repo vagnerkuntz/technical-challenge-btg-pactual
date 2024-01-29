@@ -30,9 +30,6 @@ public class CustomValidationErrorMiddleware(RequestDelegate next)
 
                     if (errorsDict != null)
                     {
-                        var firstKey = errorsDict.Keys.First();
-                        errorsDict.Remove(firstKey);
-
                         foreach (var error in errorsDict)
                         {
                             var key = error.Key.Replace("$.", "");

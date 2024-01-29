@@ -27,39 +27,21 @@ namespace BankKRT.Presentation.Controllers
         [HttpGet("GetByDocument/{document}")]
         public async Task<IActionResult> GetByDocument(string document)
         {
-            var customer = await customerService.GetCustomerByDocument(document);
-            if (customer == null)
-            {
-                return NotFound();
-            }
-
-            var responseDto = new CustomerResponseByDocumentDTO
-            {
-                Document = customer.Document,
-                LimitPix = customer.LimitPix
-            };
-
-            return Ok(responseDto);
-        }
-
-        [HttpGet("GetByNumberAccount/{numberAccount:int}")]
-        public async Task<IActionResult> GetByNumberAccount(int numberAccount)
-        {
             try
             {
-                var customer = await customerService.GetCustomerByNumberAccountAsync(numberAccount);
-                if (customer == null)
+                var customer = await customerService.GetCustomerByDocument(document);
+                if (!customer.Any())
                 {
                     return NotFound();
                 }
 
-                var responseDto = new CustomerResponseByNumberAccountDTO
+                var responseDtoArray = customer.Select(customer => new CustomerResponseByDocumentDTO
                 {
-                    NumberAccount = customer.NumberAccount,
+                    Document = customer.Document,
                     LimitPix = customer.LimitPix
-                };
+                }).ToArray();
 
-                return Ok(responseDto);
+                return Ok(responseDtoArray);
             }
             catch (System.Exception ex)
             {
@@ -67,15 +49,41 @@ namespace BankKRT.Presentation.Controllers
             }
         }
 
-        [HttpPut("update-pix-limit")]
-        public async Task<IActionResult> UpdatePixLimit(int numberAccount, decimal newLimit)
+        [HttpGet("GetByNumberAccount/{numberAccount:int}")]
+        public async Task<IActionResult> GetByNumberAccount(int numberAccount)
         {
             try
             {
-                await customerService.UpdatePixLimitAsync(numberAccount, newLimit);
+                var customers = await customerService.GetCustomersByNumberAccount(numberAccount);
+                if (!customers.Any())
+                {
+                    return NotFound("Nenhum cliente encontrado para a conta especificada.");
+                }
+
+                var responseDtoArray = customers.Select(customer => new CustomerResponseByNumberAccountDTO
+                {
+                    Document = customer.Document,
+                    NumberAccount = customer.NumberAccount,
+                    LimitPix = customer.LimitPix
+                }).ToArray();
+
+                return Ok(responseDtoArray);
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPut("UpdatePixLimit")]
+        public async Task<IActionResult> UpdatePixLimit([FromBody] CustomerResponseByNumberAccountDTO request)
+        {
+            try
+            {
+                await customerService.UpdatePixLimitAsync(request.Document, request.NumberAccount, request.LimitPix);
                 return Ok("Limite PIX atualizado com sucesso.");
             }
-            catch (ArgumentException ex)
+            catch (System.Exception ex)
             {
                 return BadRequest(ex.Message);
             }
@@ -93,5 +101,45 @@ namespace BankKRT.Presentation.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPost("StartPixTransaction")]
+        public async Task<IActionResult> StartPixTransaction([FromBody] CustomerTransactionDTO request)
+        {
+            try
+            {
+                if (request.DocumentSourceAccount == request.DocumentDestinationAccount || request.SourceAccount == request.DestinationAccount)
+                {
+                    return BadRequest("Você não pode realizar uma transferência para a mesma conta.");
+                }
+
+                var sourceAccount = await customerService.GetCustomersByNumberAccount(request.SourceAccount);
+                if (!sourceAccount.Any())
+                {
+                    return BadRequest("Conta de origem não encontrada.");
+                }
+
+                var destinationAccount = await customerService.GetCustomersByNumberAccount(request.DestinationAccount);
+                if (!destinationAccount.Any())
+                {
+                    return BadRequest("Conta de destino não encontrada.");
+                }
+
+                if (request.TransactionValue == 0)
+                {
+                    return BadRequest("O valor transacionado precisa ser maior que zero");
+                }
+
+                var newLimit =
+                    await customerService.ConsumeLimitForTransaction(request.DocumentSourceAccount, request.SourceAccount, request.TransactionValue);
+                await customerService.UpdateTargetAccountLimit(request.DocumentDestinationAccount, request.DestinationAccount, request.TransactionValue);
+
+                return Ok(new { Status = true, Message = "Transação PIX aprovada.", CurrentLimitSourceAccount = newLimit });
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
 }

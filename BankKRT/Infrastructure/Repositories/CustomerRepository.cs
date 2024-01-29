@@ -26,73 +26,102 @@ namespace BankKRT.Infrastructure.Repositories
             await context.SaveAsync(customerDynamoDbModel);
         }
 
-        public async Task<Customer?> GetCustomerByDocument(string document)
+        public async Task<IEnumerable<Customer?>> GetCustomerByDocument(string document)
         {
-            var customerDynamoDbModel = await context.LoadAsync<CustomerDynamoDBModel>(document);
-            if (customerDynamoDbModel == null)
+            try
             {
-                return null;
-            }
+                var customerDynamoDbModel = await context.LoadAsync<CustomerDynamoDBModel>(document) ?? throw new InvalidOperationException(
+                        $"Cliente com o documento {document} não encontrado.");
 
-            return new Customer
+                var customer = new Customer
+                {
+                    Document = customerDynamoDbModel.Document,
+                    NumberAccount = customerDynamoDbModel.NumberAccount,
+                    LimitPix = customerDynamoDbModel.LimitPix
+                };
+
+                return new[] { customer };
+
+            }
+            catch (Exception e)
             {
-                Document = customerDynamoDbModel.Document,
-                LimitPix = customerDynamoDbModel.LimitPix
-            };
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
-        public async Task<Customer?> GetCustomerByNumberAccount(int numberAccount)
+        public async Task<IEnumerable<Customer>> GetCustomersByNumberAccount(int numberAccount)
         {
-            var queryConfig = new DynamoDBOperationConfig
+            try
             {
-                IndexName = "NumberAccountIndex"
-            };
-                
-            var search = context.QueryAsync<CustomerDynamoDBModel>(numberAccount, queryConfig);
-            var results = await search.GetRemainingAsync();
+                var queryConfig = new DynamoDBOperationConfig
+                {
+                    IndexName = "NumberAccountIndex"
+                };
 
-            var firstResult = results.FirstOrDefault();
-            if (firstResult == null)
-            {
-                return null;
+                var search = context.QueryAsync<CustomerDynamoDBModel>(numberAccount, queryConfig);
+                var results = await search.GetRemainingAsync();
+
+                return results.Select(result => new Customer
+                {
+                    Document = result.Document,
+                    NumberAccount = result.NumberAccount,
+                    LimitPix = result.LimitPix
+                });
             }
-
-            return new Customer
+            catch (Exception e)
             {
-                NumberAccount = firstResult.NumberAccount,
-                LimitPix = firstResult.LimitPix
-            };
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
-        public async Task UpdateLimitPix(int numberAccount, decimal newLimit)
+        public async Task UpdateLimitPix(string document, int numberAccount, decimal newLimit)
         {
-            var queryConfig = new DynamoDBOperationConfig
+            try
             {
-                IndexName = "NumberAccountIndex"
-            };
+                var queryConfig = new DynamoDBOperationConfig
+                {
+                    IndexName = "NumberAccountIndex"
+                };
 
-            var customerAccount = context.QueryAsync<CustomerDynamoDBModel>(numberAccount, queryConfig);
-            var results = await customerAccount.GetRemainingAsync();
+                var customerAccount = context.QueryAsync<CustomerDynamoDBModel>(numberAccount, queryConfig);
+                var results = await customerAccount.GetRemainingAsync();
 
-            if (results == null || results.Count == 0)
-            {
-                throw new InvalidOperationException($"Cliente com o número da conta {numberAccount} não encontrado.");
+                if (results == null || results.Count == 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Cliente com o número da conta {numberAccount} não encontrado.");
+                }
+
+                foreach (var customer in results.Where(customer => customer.Document == document))
+                {
+                    customer.LimitPix = newLimit;
+                    await context.SaveAsync(customer);
+                }
             }
-
-            foreach (var customer in results)
+            catch (Exception e)
             {
-                customer.LimitPix = newLimit;
-                await context.SaveAsync(customer);
+                Console.WriteLine(e);
+                throw;
             }
         }
 
         public async Task DeleteCustomerByDocument(string document)
         {
-            var customerDynamoDbModel = await context.LoadAsync<CustomerDynamoDBModel>(document);
-            if (customerDynamoDbModel != null)
-                await context.DeleteAsync(customerDynamoDbModel);
-            else
-                throw new InvalidOperationException($"Cliente com o CPF {document} não encontrado.");
+            try
+            {
+                var customerDynamoDbModel = await context.LoadAsync<CustomerDynamoDBModel>(document);
+                if (customerDynamoDbModel != null)
+                    await context.DeleteAsync(customerDynamoDbModel);
+                else
+                    throw new InvalidOperationException($"Cliente com o CPF {document} não encontrado.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
     }
