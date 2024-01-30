@@ -13,3 +13,5 @@
     "Region": "COLOQUE-A-REGIÃO-DA-AWS"
   }
   ```
+
+## Para documentação e testes dos endpoints é usado o swagger
